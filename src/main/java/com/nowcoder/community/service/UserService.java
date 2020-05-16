@@ -2,15 +2,16 @@ package com.nowcoder.community.service;
 
 import com.nowcoder.community.dao.UserMapper;
 import com.nowcoder.community.entity.User;
+import com.nowcoder.community.util.CommunityUtil;
 import com.nowcoder.community.util.MailClient;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.context.Context;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 @Service
 public class UserService {
@@ -63,13 +64,41 @@ public class UserService {
 
         }
 
+        //Validate the username
         User u = userMapper.selectByName(user.getUsername());
-        if (u == null) {
+        if (u != null) {
 
             map.put("usernameMsg", "Username is already registered!");
             return map;
 
         }
+
+        //Validate the email address
+        u = userMapper.selectByEmail(user.getEmail());
+        if (u != null) {
+
+            map.put("emailMsg", "Username is already registered!");
+            return map;
+
+        }
+
+        //Register the user
+        user.setSalt(CommunityUtil.generateUUID().substring(0, 5));
+        user.setPassword(CommunityUtil.md5(user.getPassword() + user.getSalt()));
+        user.setType(0);
+        user.setStatus(0);
+        user.setActivationCode(CommunityUtil.generateUUID());
+        user.setHeaderUrl(String.format("http://images.nowcoder.com/head/%dt.png", new Random().nextInt(1000)));
+        user.setCreateTime(new Date());
+        userMapper.insertUser(user);
+
+        //Activation mail
+        Context context = new Context();
+        context.setVariable("email", user.getEmail());
+        String url = domain + contextPath + "/activation/" + user.getId() + "/" + user.getActivationCode();
+        context.setVariable("url", url);
+        String content = templateEngine.process("/mail/activation", context);
+        mailClient.sendMail(user.getEmail(), "Activation Mail", content);
 
         return map;
 
