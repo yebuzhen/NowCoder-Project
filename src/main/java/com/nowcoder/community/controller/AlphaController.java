@@ -16,6 +16,9 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.*;
 
+/**
+ * @author barea
+ */
 @Controller
 @RequestMapping("/alpha")
 public class AlphaController {
@@ -57,7 +60,7 @@ public class AlphaController {
         try (
                 PrintWriter writer = response.getWriter();
                 ) {
-            writer.write("<h1>NewCoder</h1>");
+            writer.write("<h1>NowCoder</h1>");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -192,6 +195,7 @@ public class AlphaController {
 
     }
 
+    //Session Example
     @RequestMapping(path = "/session/set", method = RequestMethod.GET)
     @ResponseBody
     public String setSession(HttpSession session) {
