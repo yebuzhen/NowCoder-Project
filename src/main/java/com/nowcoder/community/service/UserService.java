@@ -127,7 +127,7 @@ public class UserService implements CommunityConstant {
 
     }
 
-    public Map<String, Object> login(String username, String password, int expiredSeconds) {
+    public Map<String, Object> login(String username, String password, long expiredSeconds) {
 
         Map<String, Object> map = new HashMap<>();
 
@@ -163,7 +163,7 @@ public class UserService implements CommunityConstant {
         }
 
         //Validate Password
-        password = CommunityUtil.md5(password + user.getStatus());
+        password = CommunityUtil.md5(password + user.getSalt());
         if (!user.getPassword().equals(password)) {
 
             map.put("passwordMsg", "Password is wrong!");
@@ -181,6 +181,10 @@ public class UserService implements CommunityConstant {
         map.put("ticket", loginTicket.getTicket());
         return map;
 
+    }
+
+    public void logout(String ticket) {
+        loginTicketMapper.updateStatus(ticket, 1);
     }
 
 }
