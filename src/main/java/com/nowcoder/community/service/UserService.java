@@ -192,6 +192,10 @@ public class UserService implements CommunityConstant {
         return loginTicketMapper.selectByTicket(ticket);
     }
 
+    public int updateHeader(int userId, String headerUrl) {
+        return userMapper.updateHeader(userId, headerUrl);
+    }
+
     // 重置密码
     public Map<String, Object> resetPassword(String email, String password) {
 
