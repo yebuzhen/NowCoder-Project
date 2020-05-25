@@ -1,5 +1,6 @@
 package com.nowcoder.community.controller;
 
+import com.nowcoder.community.annotation.LoginRequired;
 import com.nowcoder.community.entity.User;
 import com.nowcoder.community.service.UserService;
 import com.nowcoder.community.util.CommunityUtil;
@@ -47,11 +48,13 @@ public class UserController {
     @Autowired
     private HostHolder hostHolder;
 
+    @LoginRequired
     @RequestMapping(path = "/setting", method = RequestMethod.GET)
     public String getSettingPage() {
         return "/site/setting";
     }
 
+    @LoginRequired
     @RequestMapping(path = "/upload", method = RequestMethod.POST)
     public String uploadHeader(MultipartFile imageFile, Model model) {
 
@@ -125,17 +128,23 @@ public class UserController {
     }
 
     // 修改密码
+    @LoginRequired
     @RequestMapping(path = "/updatePassword", method = RequestMethod.POST)
     public String updatePassword(String oldPassword, String newPassword, Model model) {
+
         User user = hostHolder.getUser();
         Map<String, Object> map = userService.updatePassword(user.getId(), oldPassword, newPassword);
+
         if (map == null || map.isEmpty()) {
             return "redirect:/logout";
         } else {
+
             model.addAttribute("oldPasswordMsg", map.get("oldPasswordMsg"));
             model.addAttribute("newPasswordMsg", map.get("newPasswordMsg"));
             return "/site/setting";
+
         }
+
     }
 
 }
