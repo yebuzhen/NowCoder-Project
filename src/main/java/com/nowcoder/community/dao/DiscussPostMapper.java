@@ -15,4 +15,6 @@ public interface DiscussPostMapper {
     // If there is only one parameter, and which would be used in <if>, then the alias is mandatory
     int selectDiscussPostRows(@Param("userId") int userId);
 
+    int insertDiscussPost(DiscussPost discussPost);
+
 }
