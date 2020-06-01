@@ -2,6 +2,9 @@ package com.nowcoder.community.entity;
 
 import java.util.Date;
 
+/**
+ * @author barea
+ */
 public class Message {
 
   private int id, fromId, toId;
