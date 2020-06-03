@@ -13,6 +13,7 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
@@ -46,15 +47,15 @@ public class MessageController {
 
       for (Message message : latestLetters) {
 
-        Map<String, Object> map = new HashMap<>();
+        Map<String, Object> map = new HashMap<>(4);
         map.put("latestLetter", message);
         map.put("letterCount", messageService.findLetterCount(message.getConversationId()));
         map.put(
             "unreadCount",
             messageService.findLetterUnreadCount(user.getId(), message.getConversationId()));
-        int targetId =
+        int counterpartId =
             user.getId() == message.getFromId() ? message.getToId() : message.getFromId();
-        map.put("targetUser", userService.findUserById(targetId));
+        map.put("counterpartUser", userService.findUserById(counterpartId));
 
         conversations.add(map);
       }
@@ -68,4 +69,49 @@ public class MessageController {
 
     return "/site/letter";
   }
+
+  @RequestMapping(path = "/letter/detail/{conversationId}", method = RequestMethod.GET)
+  public String getLetterDetail(@PathVariable("conversationId") String conversationId, Page page, Model model) {
+
+    //page info
+    page.setLimitInOnePage(5);
+    page.setPath("/letter/detail/" + conversationId);
+    page.setRowsTotal(messageService.findLetterCount(conversationId));
+
+    //The list of letters of one conversation
+    List<Message> letterList = messageService.findLetters(conversationId, page.getOffset(), page.getLimitInOnePage());
+    List<Map<String, Object>> letters = new ArrayList<>();
+
+    if (letterList != null) {
+
+      for (Message message : letterList) {
+
+        Map<String, Object> map = new HashMap<>();
+        map.put("letter", message);
+        map.put("fromUser", userService.findUserById(message.getFromId()));
+        letters.add(map);
+
+      }
+
+    }
+
+    model.addAttribute("letters", letters);
+
+    //The counterpart of the letter
+    model.addAttribute("counterpartUser", getCounterpartUser(conversationId));
+
+    return "/site/letter-detail";
+
+  }
+
+  private User getCounterpartUser(String conversationId) {
+
+    String[] ids = conversationId.split("_");
+    int id0 = Integer.parseInt(ids[0]);
+    int id1 = Integer.parseInt(ids[1]);
+
+    return hostHolder.getUser().getId() == id0 ? userService.findUserById(id1) : userService.findUserById(id0);
+
+  }
+
 }

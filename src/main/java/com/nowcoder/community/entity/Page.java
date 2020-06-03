@@ -44,7 +44,7 @@ public class Page {
 
     public void setRowsTotal(int rowsTotal) {
 
-        if (rowsTotal >= 10) {
+        if (rowsTotal >= 0) {
             this.rowsTotal = rowsTotal;
         }
 
