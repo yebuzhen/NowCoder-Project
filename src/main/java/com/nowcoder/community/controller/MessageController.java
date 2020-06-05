@@ -110,7 +110,6 @@ public class MessageController {
     }
 
     return "/site/letter-detail";
-
   }
 
   private User getCounterpartUser(String conversationId) {
@@ -135,13 +134,10 @@ public class MessageController {
         if (hostHolder.getUser().getId() == message.getToId() && message.getStatus() == 0) {
           ids.add(message.getId());
         }
-
       }
-
     }
 
     return ids;
-
   }
 
   @RequestMapping(path = "/letter/send", method = RequestMethod.POST)
@@ -167,6 +163,15 @@ public class MessageController {
     message.setCreateTime(new Date());
     messageService.addMessage(message);
 
+    return CommunityUtil.getJSONString(0);
+  }
+
+  // 删除私信
+  @RequestMapping(path = "/letter/delete", method = RequestMethod.POST)
+  @ResponseBody
+  public String deleteLetter(int id) {
+
+    messageService.deleteMessage(id);
     return CommunityUtil.getJSONString(0);
   }
 }
