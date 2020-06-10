@@ -4,7 +4,11 @@ import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.dao.DataAccessException;
+import org.springframework.data.redis.core.BoundValueOperations;
+import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.SessionCallback;
 import org.springframework.test.context.ContextConfiguration;
 
 @SpringBootTest
@@ -65,7 +69,6 @@ public class RedisTests {
     System.out.println(redisTemplate.opsForSet().size(redisKey));
     System.out.println(redisTemplate.opsForSet().pop(redisKey));
     System.out.println(redisTemplate.opsForSet().members(redisKey));
-
   }
 
   @Test
@@ -83,7 +86,6 @@ public class RedisTests {
     System.out.println(redisTemplate.opsForZSet().score(redisKey, "Barea"));
     System.out.println(redisTemplate.opsForZSet().reverseRank(redisKey, "Barea"));
     System.out.println(redisTemplate.opsForZSet().reverseRange(redisKey, 0, 2));
-
   }
 
   @Test
@@ -94,7 +96,47 @@ public class RedisTests {
     System.out.println(redisTemplate.hasKey("test:user"));
 
     redisTemplate.expire("test:students", 10, TimeUnit.SECONDS);
-
   }
 
+  // Use one key for multiple times.
+  @Test
+  public void testBoundOperations() {
+
+    String redisKey = "test:count";
+    BoundValueOperations operations = redisTemplate.boundValueOps(redisKey);
+    operations.increment();
+    operations.increment();
+    operations.increment();
+    operations.increment();
+    operations.increment();
+    System.out.println(operations.get());
+  }
+
+  // Programmatic Transaction
+  @Test
+  public void testTransactional() {
+
+    Object object =
+        redisTemplate.execute(
+            new SessionCallback() {
+
+              @Override
+              public Object execute(RedisOperations operations) throws DataAccessException {
+
+                String redisKey = "test:tx";
+
+                operations.multi();
+
+                operations.opsForSet().add(redisKey, "Alice");
+                operations.opsForSet().add(redisKey, "Bob");
+                operations.opsForSet().add(redisKey, "Charlie");
+
+                System.out.println(operations.opsForSet().members(redisKey));
+
+                return operations.exec();
+              }
+            });
+
+    System.out.println(object);
+  }
 }
