@@ -34,7 +34,7 @@ public class LikeController {
     // If already liked
     int likeStatus = likeService.findEntityLikeStatus(user.getId(), entityType, entityId);
     // Put results into a map
-    Map<String, Object> map = new HashMap<>();
+    Map<String, Object> map = new HashMap<>(2);
     map.put("likeCount", likeCount);
     map.put("likeStatus", likeStatus);
 

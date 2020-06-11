@@ -3,7 +3,9 @@ package com.nowcoder.community.controller;
 import com.nowcoder.community.entity.DiscussPost;
 import com.nowcoder.community.entity.Page;
 import com.nowcoder.community.service.DiscussPostService;
+import com.nowcoder.community.service.LikeService;
 import com.nowcoder.community.service.UserService;
+import com.nowcoder.community.util.CommunityConstant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -15,11 +17,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
 @Controller
-public class HomeController {
+public class HomeController implements CommunityConstant {
 
   @Autowired private DiscussPostService discussPostService;
 
   @Autowired private UserService userService;
+
+  @Autowired private LikeService likeService;
 
   @RequestMapping(path = "/index", method = RequestMethod.GET)
   public String getIndexPage(Model model, Page page) {
@@ -38,9 +42,10 @@ public class HomeController {
 
       for (DiscussPost post : discussPostList) {
 
-        Map<String, Object> map = new HashMap<>();
+        Map<String, Object> map = new HashMap<>(3);
         map.put("post", post);
         map.put("user", userService.findUserById(post.getUserId()));
+        map.put("likeCount", likeService.findEntityLikeCount(ENTITY_TYPE_POST, post.getId()));
         discussPosts.add(map);
       }
     }
