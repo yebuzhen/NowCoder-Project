@@ -62,4 +62,18 @@ public class FollowService {
     String followeeKey = RedisKeyUtil.getFolloweeKey(userId, entityType);
     return redisTemplate.opsForZSet().zCard(followeeKey);
   }
+
+  // Query the number of followers that one entity owns
+  public long findFollowerCount(int entityType, int entityId) {
+
+    String followerKey = RedisKeyUtil.getFollowerKey(entityType, entityId);
+    return redisTemplate.opsForZSet().zCard(followerKey);
+  }
+
+  // Query if the user has followed the entity
+  public boolean hasFollowed(int userId, int entityType, int entityId) {
+
+    String followeeKey = RedisKeyUtil.getFolloweeKey(userId, entityType);
+    return redisTemplate.opsForZSet().score(followeeKey, entityId) != null;
+  }
 }
