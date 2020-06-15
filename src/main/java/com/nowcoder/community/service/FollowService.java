@@ -103,6 +103,7 @@ public class FollowService implements CommunityConstant {
     return getMapList(offset, limit, followerKey);
   }
 
+  //Helper function to fetch the list of maps
   private List<Map<String, Object>> getMapList(int offset, int limit, String key) {
 
     // The returned set is in order
