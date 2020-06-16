@@ -4,6 +4,7 @@
       <w>followees</w>
       <w>kaptcha</w>
       <w>unfollow</w>
+      <w>zset</w>
     </words>
   </dictionary>
 </component>
