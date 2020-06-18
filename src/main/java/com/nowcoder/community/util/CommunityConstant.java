@@ -15,4 +15,9 @@ public interface CommunityConstant {
   int ENTITY_TYPE_POST = 1;
   int ENTITY_TYPE_COMMENT = 2;
   int ENTITY_TYPE_USER = 3;
+
+  // Topic types
+  String TOPIC_COMMENT = "comment";
+  String TOPIC_LIKE = "like";
+  String TOPIC_FOLLOW = "follow";
 }

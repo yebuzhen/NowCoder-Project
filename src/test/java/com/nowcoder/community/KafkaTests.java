@@ -13,8 +13,7 @@ import org.springframework.test.context.ContextConfiguration;
 @ContextConfiguration(classes = CommunityApplication.class)
 public class KafkaTests {
 
-  @Autowired
-  private KafkaProducer kafkaProducer;
+  @Autowired private KafkaProducer kafkaProducer;
 
   @Test
   public void testKafka() {
@@ -27,21 +26,17 @@ public class KafkaTests {
     } catch (InterruptedException e) {
       e.printStackTrace();
     }
-
   }
-
 }
 
 @Component
 class KafkaProducer {
 
-  @Autowired
-  private KafkaTemplate kafkaTemplate;
+  @Autowired private KafkaTemplate kafkaTemplate;
 
   public void sendMessage(String topic, String content) {
     kafkaTemplate.send(topic, content);
   }
-
 }
 
 @Component
@@ -51,5 +46,4 @@ class KafkaConsumer {
   public void handleMessage(ConsumerRecord record) {
     System.out.println(record.value());
   }
-
 }
