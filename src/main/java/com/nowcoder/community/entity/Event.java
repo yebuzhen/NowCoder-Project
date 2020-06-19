@@ -7,7 +7,11 @@ import java.util.Map;
 public class Event {
 
   private String topic;
-  private int userId, entityType, entityId, entityUserId;
+
+  // The user triggering the event
+  private int userId;
+
+  private int entityType, entityId, entityUserId;
   private Map<String, Object> data = new HashMap<>();
 
   public String getTopic() {
