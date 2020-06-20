@@ -33,8 +33,8 @@ public class MessageService {
     return messageMapper.selectLetterCount(conversationId);
   }
 
-  public int findLetterUnreadCount(int userId, String conversationId) {
-    return messageMapper.selectLetterUnreadCount(userId, conversationId);
+  public int findUnreadLetterCount(int userId, String conversationId) {
+    return messageMapper.selectUnreadLetterCount(userId, conversationId);
   }
 
   public int addMessage(Message message) {
@@ -50,5 +50,17 @@ public class MessageService {
 
   public int deleteMessage(int id) {
     return messageMapper.updateStatus(Arrays.asList(new Integer[] {id}), 2);
+  }
+
+  public Message findLatestNotice(int userId, String topic) {
+    return messageMapper.selectLatestNotice(userId, topic);
+  }
+
+  public int findNoticeCount(int userId, String topic) {
+    return messageMapper.selectNoticeCount(userId, topic);
+  }
+
+  public int findUnreadNoticeCount(int userId, String topic) {
+    return messageMapper.selectUnreadNoticeCount(userId, topic);
   }
 }

@@ -133,7 +133,7 @@ public class MapperTests {
     count = messageMapper.selectLetterCount("111_112");
     System.out.println(count);
 
-    count = messageMapper.selectLetterUnreadCount(131, "111_131");
+    count = messageMapper.selectUnreadLetterCount(131, "111_131");
     System.out.println(count);
 
   }

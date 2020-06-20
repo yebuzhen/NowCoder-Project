@@ -21,11 +21,20 @@ public interface MessageMapper {
   int selectLetterCount(String conversation);
 
   // Query the unread message(letter) number of one user or one conversation
-  int selectLetterUnreadCount(int userId, String conversationId);
+  int selectUnreadLetterCount(int userId, String conversationId);
 
   // Add new message
   int insertMessage(Message message);
 
   // Update the status of the message
   int updateStatus(List<Integer> ids, int status);
+
+  // Query the latest system notice of one topic
+  Message selectLatestNotice(int userId, String topic);
+
+  // Query the number of system notices of one topic
+  int selectNoticeCount(int userId, String topic);
+
+  // Query the number of unread system notices of one topic
+  int selectUnreadNoticeCount(int userId, String topic);
 }

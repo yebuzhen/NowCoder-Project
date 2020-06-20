@@ -1,10 +1,12 @@
 package com.nowcoder.community.controller;
 
+import com.alibaba.fastjson.JSONObject;
 import com.nowcoder.community.entity.Message;
 import com.nowcoder.community.entity.Page;
 import com.nowcoder.community.entity.User;
 import com.nowcoder.community.service.MessageService;
 import com.nowcoder.community.service.UserService;
+import com.nowcoder.community.util.CommunityConstant;
 import com.nowcoder.community.util.CommunityUtil;
 import com.nowcoder.community.util.HostHolder;
 import java.util.ArrayList;
@@ -19,10 +21,11 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.util.HtmlUtils;
 
 /** @author barea */
 @Controller
-public class MessageController {
+public class MessageController implements CommunityConstant {
 
   @Autowired private MessageService messageService;
 
@@ -55,7 +58,7 @@ public class MessageController {
         map.put("letterCount", messageService.findLetterCount(message.getConversationId()));
         map.put(
             "unreadCount",
-            messageService.findLetterUnreadCount(user.getId(), message.getConversationId()));
+            messageService.findUnreadLetterCount(user.getId(), message.getConversationId()));
         int counterpartId =
             user.getId() == message.getFromId() ? message.getToId() : message.getFromId();
         map.put("counterpartUser", userService.findUserById(counterpartId));
@@ -67,8 +70,10 @@ public class MessageController {
     model.addAttribute("conversations", conversations);
 
     // Query the total number of unread messages for the user
-    int letterUnreadCount = messageService.findLetterUnreadCount(user.getId(), null);
-    model.addAttribute("letterUnreadCount", letterUnreadCount);
+    int unreadLetterCount = messageService.findUnreadLetterCount(user.getId(), null);
+    model.addAttribute("unreadLetterCount", unreadLetterCount);
+    int unreadNoticeCount = messageService.findUnreadNoticeCount(user.getId(), null);
+    model.addAttribute("unreadNoticeCount", unreadNoticeCount);
 
     return "/site/letter";
   }
@@ -174,4 +179,85 @@ public class MessageController {
     messageService.deleteMessage(id);
     return CommunityUtil.getJSONString(0);
   }
+
+  @RequestMapping(path = "/notice/list", method = RequestMethod.GET)
+  public String getNoticeList(Model model) {
+
+    User user = hostHolder.getUser();
+
+    // Query comment related system notice
+    Message message = messageService.findLatestNotice(user.getId(), TOPIC_COMMENT);
+    if (message != null) {
+
+      Map<String, Object> messageVO = new HashMap<>(7);
+      messageVO.put("message", message);
+
+      String content = HtmlUtils.htmlUnescape(message.getContent());
+      Map<String, Object> data = JSONObject.parseObject(content, HashMap.class);
+
+      messageVO.put("user", userService.findUserById((Integer) data.get("userId")));
+      messageVO.put("entityType", data.get("entityType"));
+      messageVO.put("entityId", data.get("entityId"));
+      messageVO.put("postId", data.get("postId"));
+
+      messageVO.put("count", messageService.findNoticeCount(user.getId(), TOPIC_COMMENT));
+      messageVO.put("unread", messageService.findUnreadNoticeCount(user.getId(), TOPIC_COMMENT));
+
+      model.addAttribute("commentNotice", messageVO);
+
+    }
+
+    // Query like related system notice
+    message = messageService.findLatestNotice(user.getId(), TOPIC_LIKE);
+    if (message != null) {
+
+      Map<String, Object> messageVO = new HashMap<>(7);
+      messageVO.put("message", message);
+
+      String content = HtmlUtils.htmlUnescape(message.getContent());
+      Map<String, Object> data = JSONObject.parseObject(content, HashMap.class);
+
+      messageVO.put("user", userService.findUserById((Integer) data.get("userId")));
+      messageVO.put("entityType", data.get("entityType"));
+      messageVO.put("entityId", data.get("entityId"));
+      messageVO.put("postId", data.get("postId"));
+
+      messageVO.put("count", messageService.findNoticeCount(user.getId(), TOPIC_LIKE));
+      messageVO.put("unread", messageService.findUnreadNoticeCount(user.getId(), TOPIC_LIKE));
+
+      model.addAttribute("likeNotice", messageVO);
+
+    }
+
+    // Query follow related system notice
+    message = messageService.findLatestNotice(user.getId(), TOPIC_FOLLOW);
+    if (message != null) {
+
+      Map<String, Object> messageVO = new HashMap<>(6);
+      messageVO.put("message", message);
+
+      String content = HtmlUtils.htmlUnescape(message.getContent());
+      Map<String, Object> data = JSONObject.parseObject(content, HashMap.class);
+
+      messageVO.put("user", userService.findUserById((Integer) data.get("userId")));
+      messageVO.put("entityType", data.get("entityType"));
+      messageVO.put("entityId", data.get("entityId"));
+
+      messageVO.put("count", messageService.findNoticeCount(user.getId(), TOPIC_FOLLOW));
+      messageVO.put("unread", messageService.findUnreadNoticeCount(user.getId(), TOPIC_FOLLOW));
+
+      model.addAttribute("followNotice", messageVO);
+
+    }
+
+    // Query unread message count
+    int unreadLetterCount = messageService.findUnreadLetterCount(user.getId(), null);
+    model.addAttribute("unreadLetterCount", unreadLetterCount);
+    int unreadNoticeCount = messageService.findUnreadNoticeCount(user.getId(), null);
+    model.addAttribute("unreadNoticeCount", unreadNoticeCount);
+
+    return "/site/notice";
+
+  }
+
 }
