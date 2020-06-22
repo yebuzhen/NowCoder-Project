@@ -204,7 +204,6 @@ public class MessageController implements CommunityConstant {
       messageVO.put("unread", messageService.findUnreadNoticeCount(user.getId(), TOPIC_COMMENT));
 
       model.addAttribute("commentNotice", messageVO);
-
     }
 
     // Query like related system notice
@@ -226,7 +225,6 @@ public class MessageController implements CommunityConstant {
       messageVO.put("unread", messageService.findUnreadNoticeCount(user.getId(), TOPIC_LIKE));
 
       model.addAttribute("likeNotice", messageVO);
-
     }
 
     // Query follow related system notice
@@ -247,7 +245,6 @@ public class MessageController implements CommunityConstant {
       messageVO.put("unread", messageService.findUnreadNoticeCount(user.getId(), TOPIC_FOLLOW));
 
       model.addAttribute("followNotice", messageVO);
-
     }
 
     // Query unread message count
@@ -257,7 +254,53 @@ public class MessageController implements CommunityConstant {
     model.addAttribute("unreadNoticeCount", unreadNoticeCount);
 
     return "/site/notice";
-
   }
 
+  @RequestMapping(path = "/notice/detail/{topic}", method = RequestMethod.GET)
+  public String getNoticeDetail(@PathVariable("topic") String topic, Page page, Model model) {
+
+    User user = hostHolder.getUser();
+
+    page.setLimitInOnePage(5);
+    page.setPath("/notice/detail/" + topic);
+    page.setRowsTotal(messageService.findNoticeCount(user.getId(), topic));
+
+    List<Message> noticeList =
+        messageService.findNotices(user.getId(), topic, page.getOffset(), page.getLimitInOnePage());
+    List<Map<String, Object>> noticeVoList = new ArrayList<>();
+
+    if (noticeList != null) {
+
+      for (Message notice : noticeList) {
+
+        Map<String, Object> map = new HashMap<>();
+
+        // Notice
+        map.put("notice", notice);
+
+        // Content
+        String content = HtmlUtils.htmlUnescape(notice.getContent());
+        Map<String, Object> data = JSONObject.parseObject(content, HashMap.class);
+        map.put("user", userService.findUserById((Integer) data.get("userId")));
+        map.put("entityType", data.get("entityType"));
+        map.put("entityId", data.get("entityId"));
+        map.put("postId", data.get("postId"));
+
+        // The author of the message(notice), which is actually the system
+        map.put("fromUser", userService.findUserById(notice.getFromId()));
+
+        noticeVoList.add(map);
+      }
+    }
+
+    model.addAttribute("notices", noticeVoList);
+
+    // Set as read
+    List<Integer> ids = getLetterIds(noticeList);
+    if (!ids.isEmpty()) {
+      messageService.readMessage(ids);
+    }
+
+    return "/site/notice-detail";
+  }
 }

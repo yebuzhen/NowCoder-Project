@@ -37,4 +37,7 @@ public interface MessageMapper {
 
   // Query the number of unread system notices of one topic
   int selectUnreadNoticeCount(int userId, String topic);
+
+  // Query the list of system notices of one topic for one user
+  List<Message> selectNotices(int userId, String topic, int offset, int limit);
 }
