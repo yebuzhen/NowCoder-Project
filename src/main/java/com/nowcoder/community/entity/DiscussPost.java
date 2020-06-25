@@ -1,99 +1,136 @@
 package com.nowcoder.community.entity;
 
 import java.util.Date;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.elasticsearch.annotations.Document;
+import org.springframework.data.elasticsearch.annotations.Field;
+import org.springframework.data.elasticsearch.annotations.FieldType;
 
+/** @author barea */
+@Document(indexName = "discusspost", type = "_doc", shards = 6, replicas = 3)
 public class DiscussPost {
 
-    private int id, userId, type, status, commentCount;
-    private String title, content;
-    private Date createTime;
-    private double score;
+  @Id private int id;
 
-    public int getId() {
-        return id;
-    }
+  @Field(type = FieldType.Integer)
+  private int userId;
 
-    public void setId(int id) {
-        this.id = id;
-    }
+  @Field(type = FieldType.Integer)
+  private int type;
 
-    public int getUserId() {
-        return userId;
-    }
+  @Field(type = FieldType.Integer)
+  private int status;
 
-    public void setUserId(int userId) {
-        this.userId = userId;
-    }
+  @Field(type = FieldType.Integer)
+  private int commentCount;
 
-    public int getType() {
-        return type;
-    }
+  @Field(type = FieldType.Text, analyzer = "ik_max_word", searchAnalyzer = "ik_smart")
+  private String title;
 
-    public void setType(int type) {
-        this.type = type;
-    }
+  @Field(type = FieldType.Text, analyzer = "ik_max_word", searchAnalyzer = "ik_smart")
+  private String content;
 
-    public int getStatus() {
-        return status;
-    }
+  @Field(type = FieldType.Auto)
+  private Date createTime;
 
-    public void setStatus(int status) {
-        this.status = status;
-    }
+  @Field(type = FieldType.Double)
+  private double score;
 
-    public int getCommentCount() {
-        return commentCount;
-    }
+  public int getId() {
+    return id;
+  }
 
-    public void setCommentCount(int commentCount) {
-        this.commentCount = commentCount;
-    }
+  public void setId(int id) {
+    this.id = id;
+  }
 
-    public String getTitle() {
-        return title;
-    }
+  public int getUserId() {
+    return userId;
+  }
 
-    public void setTitle(String title) {
-        this.title = title;
-    }
+  public void setUserId(int userId) {
+    this.userId = userId;
+  }
 
-    public String getContent() {
-        return content;
-    }
+  public int getType() {
+    return type;
+  }
 
-    public void setContent(String content) {
-        this.content = content;
-    }
+  public void setType(int type) {
+    this.type = type;
+  }
 
-    public Date getCreateTime() {
-        return createTime;
-    }
+  public int getStatus() {
+    return status;
+  }
 
-    public void setCreateTime(Date createTime) {
-        this.createTime = createTime;
-    }
+  public void setStatus(int status) {
+    this.status = status;
+  }
 
-    public double getScore() {
-        return score;
-    }
+  public int getCommentCount() {
+    return commentCount;
+  }
 
-    public void setScore(double score) {
-        this.score = score;
-    }
+  public void setCommentCount(int commentCount) {
+    this.commentCount = commentCount;
+  }
 
-    @Override
-    public String toString() {
-        return "DiscussPost{" +
-                "id=" + id +
-                ", userId=" + userId +
-                ", type=" + type +
-                ", status=" + status +
-                ", commentCount=" + commentCount +
-                ", title='" + title + '\'' +
-                ", content='" + content + '\'' +
-                ", createTime=" + createTime +
-                ", score=" + score +
-                '}';
-    }
+  public String getTitle() {
+    return title;
+  }
 
+  public void setTitle(String title) {
+    this.title = title;
+  }
+
+  public String getContent() {
+    return content;
+  }
+
+  public void setContent(String content) {
+    this.content = content;
+  }
+
+  public Date getCreateTime() {
+    return createTime;
+  }
+
+  public void setCreateTime(Date createTime) {
+    this.createTime = createTime;
+  }
+
+  public double getScore() {
+    return score;
+  }
+
+  public void setScore(double score) {
+    this.score = score;
+  }
+
+  @Override
+  public String toString() {
+    return "DiscussPost{"
+        + "id="
+        + id
+        + ", userId="
+        + userId
+        + ", type="
+        + type
+        + ", status="
+        + status
+        + ", commentCount="
+        + commentCount
+        + ", title='"
+        + title
+        + '\''
+        + ", content='"
+        + content
+        + '\''
+        + ", createTime="
+        + createTime
+        + ", score="
+        + score
+        + '}';
+  }
 }
