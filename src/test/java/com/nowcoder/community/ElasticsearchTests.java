@@ -12,7 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates;
 import org.springframework.data.elasticsearch.core.query.NativeSearchQuery;
 import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
 import org.springframework.test.context.ContextConfiguration;
@@ -53,30 +52,29 @@ public class ElasticsearchTests {
     DiscussPost post = discussPostMapper.selectDiscussPostById(231);
     post.setContent("我是新人, 使劲灌水");
     discussPostRepository.save(post);
-
   }
 
   @Test
   public void testDelete() {
 
-//    discussPostRepository.deleteById(231);
+    //    discussPostRepository.deleteById(231);
     discussPostRepository.deleteAll();
-
   }
 
   @Test
   public void testSearchByRepository() {
 
-    NativeSearchQuery searchQuery = new NativeSearchQueryBuilder()
-        .withQuery(QueryBuilders.multiMatchQuery("互联网寒冬", "title", "content"))
-        .withSort(SortBuilders.fieldSort("type").order(SortOrder.DESC))
-        .withSort(SortBuilders.fieldSort("score").order(SortOrder.DESC))
-        .withSort(SortBuilders.fieldSort("createTime").order(SortOrder.DESC))
-        .withPageable(PageRequest.of(0, 10))
-        .withHighlightFields(
-            new HighlightBuilder.Field("title").preTags("<em>").postTags("</em>"),
-            new HighlightBuilder.Field("content").preTags("<em>").postTags("</em>")
-        ).build();
+    NativeSearchQuery searchQuery =
+        new NativeSearchQueryBuilder()
+            .withQuery(QueryBuilders.multiMatchQuery("互联网寒冬", "title", "content"))
+            .withSort(SortBuilders.fieldSort("type").order(SortOrder.DESC))
+            .withSort(SortBuilders.fieldSort("score").order(SortOrder.DESC))
+            .withSort(SortBuilders.fieldSort("createTime").order(SortOrder.DESC))
+            .withPageable(PageRequest.of(0, 10))
+            .withHighlightFields(
+                new HighlightBuilder.Field("title").preTags("<em>").postTags("</em>"),
+                new HighlightBuilder.Field("content").preTags("<em>").postTags("</em>"))
+            .build();
 
     Page<DiscussPost> page = discussPostRepository.search(searchQuery);
     System.out.println(page.getTotalElements());
@@ -87,25 +85,10 @@ public class ElasticsearchTests {
     for (DiscussPost post : page) {
       System.out.println(post);
     }
-
   }
 
   @Test
   public void testSearchByTemplate() {
-
-    NativeSearchQuery searchQuery = new NativeSearchQueryBuilder()
-        .withQuery(QueryBuilders.multiMatchQuery("互联网寒冬", "title", "content"))
-        .withSort(SortBuilders.fieldSort("type").order(SortOrder.DESC))
-        .withSort(SortBuilders.fieldSort("score").order(SortOrder.DESC))
-        .withSort(SortBuilders.fieldSort("createTime").order(SortOrder.DESC))
-        .withPageable(PageRequest.of(0, 10))
-        .withHighlightFields(
-            new HighlightBuilder.Field("title").preTags("<em>").postTags("</em>"),
-            new HighlightBuilder.Field("content").preTags("<em>").postTags("</em>")
-        ).build();
-
-    //Deprecated... See video for details
-
+    // Deprecated... See video for details
   }
-
 }

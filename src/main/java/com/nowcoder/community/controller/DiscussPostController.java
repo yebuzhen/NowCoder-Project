@@ -2,8 +2,10 @@ package com.nowcoder.community.controller;
 
 import com.nowcoder.community.entity.Comment;
 import com.nowcoder.community.entity.DiscussPost;
+import com.nowcoder.community.entity.Event;
 import com.nowcoder.community.entity.Page;
 import com.nowcoder.community.entity.User;
+import com.nowcoder.community.event.EventProducer;
 import com.nowcoder.community.service.CommentService;
 import com.nowcoder.community.service.DiscussPostService;
 import com.nowcoder.community.service.LikeService;
@@ -11,6 +13,11 @@ import com.nowcoder.community.service.UserService;
 import com.nowcoder.community.util.CommunityConstant;
 import com.nowcoder.community.util.CommunityUtil;
 import com.nowcoder.community.util.HostHolder;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -19,147 +26,158 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import java.util.*;
-
 @Controller
 @RequestMapping("/discuss")
 public class DiscussPostController implements CommunityConstant {
 
-    @Autowired
-    private DiscussPostService discussPostService;
+  @Autowired private DiscussPostService discussPostService;
 
-    @Autowired
-    private UserService userService;
+  @Autowired private UserService userService;
 
-    @Autowired
-    private HostHolder hostHolder;
+  @Autowired private HostHolder hostHolder;
 
-    @Autowired
-    private CommentService commentService;
+  @Autowired private CommentService commentService;
 
-    @Autowired
-    private LikeService likeService;
+  @Autowired private LikeService likeService;
 
-    @RequestMapping(path = "/add", method = RequestMethod.POST)
-    @ResponseBody
-    public String addDiscussPost(String title, String content) {
+  @Autowired private EventProducer eventProducer;
 
-        User user = hostHolder.getUser();
+  @RequestMapping(path = "/add", method = RequestMethod.POST)
+  @ResponseBody
+  public String addDiscussPost(String title, String content) {
 
-        if (user == null) {
-            return CommunityUtil.getJSONString(403, "You have not logged in!");
-        }
+    User user = hostHolder.getUser();
 
-        DiscussPost post = new DiscussPost();
-        post.setUserId(user.getId());
-        post.setTitle(title);
-        post.setContent(content);
-        post.setCreateTime(new Date());
-        discussPostService.addDiscussPost(post);
-
-        //TODO: If error occurs, it will be handled
-        return CommunityUtil.getJSONString(0, "Posted!");
-
+    if (user == null) {
+      return CommunityUtil.getJSONString(403, "You have not logged in!");
     }
 
-    @RequestMapping(path = "/detail/{discussPostId}", method = RequestMethod.GET)
-    public String getDiscussPost(@PathVariable("discussPostId") int discussPostId, Model model, Page page) {
+    DiscussPost post = new DiscussPost();
+    post.setUserId(user.getId());
+    post.setTitle(title);
+    post.setContent(content);
+    post.setCreateTime(new Date());
+    discussPostService.addDiscussPost(post);
 
-        //Post
-        DiscussPost post = discussPostService.findDiscussPostById(discussPostId);
-        model.addAttribute("post", post);
-        //Author user
-        User user = userService.findUserById(post.getUserId());
-        model.addAttribute("user", user);
-        //The count of likes
-        long likeCount = likeService.findEntityLikeCount(ENTITY_TYPE_POST, discussPostId);
-        model.addAttribute("likeCount", likeCount);
-        //If already liked
-        int likeStatus = hostHolder.getUser() == null ? 0 : likeService.findEntityLikeStatus(hostHolder.getUser().getId(), ENTITY_TYPE_POST, discussPostId);
-        model.addAttribute("likeStatus", likeStatus);
+    // Trigger the publish event
+    Event event =
+        new Event()
+            .setTopic(TOPIC_PUBLISH)
+            .setUserId(user.getId())
+            .setEntityType(ENTITY_TYPE_POST)
+            .setEntityId(post.getId());
+    eventProducer.fireEvent(event);
 
-        //Page info of comments
-        page.setLimitInOnePage(5);
-        page.setPath("/discuss/detail/" + discussPostId);
-        page.setRowsTotal(post.getCommentCount());
+    // TODO: If error occurs, it will be handled
+    return CommunityUtil.getJSONString(0, "Posted!");
+  }
 
-        //Comment: the comment to the post
-        //Reply: the comment to the comment
+  @RequestMapping(path = "/detail/{discussPostId}", method = RequestMethod.GET)
+  public String getDiscussPost(
+      @PathVariable("discussPostId") int discussPostId, Model model, Page page) {
 
-        //Comment list
-        List<Comment> commentList = commentService.findCommentByEntity(
-                ENTITY_TYPE_POST, post.getId(), page.getOffset(), page.getLimitInOnePage()
-        );
+    // Post
+    DiscussPost post = discussPostService.findDiscussPostById(discussPostId);
+    model.addAttribute("post", post);
+    // Author user
+    User user = userService.findUserById(post.getUserId());
+    model.addAttribute("user", user);
+    // The count of likes
+    long likeCount = likeService.findEntityLikeCount(ENTITY_TYPE_POST, discussPostId);
+    model.addAttribute("likeCount", likeCount);
+    // If already liked
+    int likeStatus =
+        hostHolder.getUser() == null
+            ? 0
+            : likeService.findEntityLikeStatus(
+                hostHolder.getUser().getId(), ENTITY_TYPE_POST, discussPostId);
+    model.addAttribute("likeStatus", likeStatus);
 
-        //Comment view object (VO) list
-        List<Map<String, Object>> commentVoList = new ArrayList<>();
+    // Page info of comments
+    page.setLimitInOnePage(5);
+    page.setPath("/discuss/detail/" + discussPostId);
+    page.setRowsTotal(post.getCommentCount());
 
-        if (commentList != null) {
+    // Comment: the comment to the post
+    // Reply: the comment to the comment
 
-            for (Comment comment : commentList) {
+    // Comment list
+    List<Comment> commentList =
+        commentService.findCommentByEntity(
+            ENTITY_TYPE_POST, post.getId(), page.getOffset(), page.getLimitInOnePage());
 
-                //Comment VO
-                Map<String, Object> commentVo = new HashMap<>();
-                //Comment
-                commentVo.put("comment", comment);
-                //Author of the comment
-                commentVo.put("user", userService.findUserById(comment.getUserId()));
-                //The count of likes
-                likeCount = likeService.findEntityLikeCount(ENTITY_TYPE_COMMENT, comment.getId());
-                commentVo.put("likeCount", likeCount);
-                //If already liked
-                likeStatus = hostHolder.getUser() == null ? 0 : likeService.findEntityLikeStatus(hostHolder.getUser().getId(), ENTITY_TYPE_COMMENT, comment.getId());
-                commentVo.put("likeStatus", likeStatus);
+    // Comment view object (VO) list
+    List<Map<String, Object>> commentVoList = new ArrayList<>();
 
-                //Reply list
-                List<Comment> replyList = commentService.findCommentByEntity(
-                        ENTITY_TYPE_COMMENT, comment.getId(), 0, Integer.MAX_VALUE
-                );
+    if (commentList != null) {
 
-                //Reply VO list
-                List<Map<String, Object>> replyVoList = new ArrayList<>();
+      for (Comment comment : commentList) {
 
-                if (replyList != null) {
+        // Comment VO
+        Map<String, Object> commentVo = new HashMap<>();
+        // Comment
+        commentVo.put("comment", comment);
+        // Author of the comment
+        commentVo.put("user", userService.findUserById(comment.getUserId()));
+        // The count of likes
+        likeCount = likeService.findEntityLikeCount(ENTITY_TYPE_COMMENT, comment.getId());
+        commentVo.put("likeCount", likeCount);
+        // If already liked
+        likeStatus =
+            hostHolder.getUser() == null
+                ? 0
+                : likeService.findEntityLikeStatus(
+                    hostHolder.getUser().getId(), ENTITY_TYPE_COMMENT, comment.getId());
+        commentVo.put("likeStatus", likeStatus);
 
-                    for (Comment reply : replyList) {
+        // Reply list
+        List<Comment> replyList =
+            commentService.findCommentByEntity(
+                ENTITY_TYPE_COMMENT, comment.getId(), 0, Integer.MAX_VALUE);
 
-                        Map<String, Object> replyVo = new HashMap<>();
-                        //Reply
-                        replyVo.put("reply", reply);
-                        //Author of the reply
-                        replyVo.put("user", userService.findUserById(reply.getUserId()));
-                        //Reply target
-                        User target = reply.getTargetId() == 0 ? null : userService.findUserById(reply.getTargetId());
-                        replyVo.put("target", target);
-                        //The count of likes
-                        likeCount = likeService.findEntityLikeCount(ENTITY_TYPE_COMMENT, reply.getId());
-                        replyVo.put("likeCount", likeCount);
-                        //If already liked
-                        likeStatus = hostHolder.getUser() == null ? 0 : likeService.findEntityLikeStatus(hostHolder.getUser().getId(), ENTITY_TYPE_COMMENT, reply.getId());
-                        replyVo.put("likeStatus", likeStatus);
+        // Reply VO list
+        List<Map<String, Object>> replyVoList = new ArrayList<>();
 
-                        replyVoList.add(replyVo);
+        if (replyList != null) {
 
-                    }
+          for (Comment reply : replyList) {
 
-                }
+            Map<String, Object> replyVo = new HashMap<>();
+            // Reply
+            replyVo.put("reply", reply);
+            // Author of the reply
+            replyVo.put("user", userService.findUserById(reply.getUserId()));
+            // Reply target
+            User target =
+                reply.getTargetId() == 0 ? null : userService.findUserById(reply.getTargetId());
+            replyVo.put("target", target);
+            // The count of likes
+            likeCount = likeService.findEntityLikeCount(ENTITY_TYPE_COMMENT, reply.getId());
+            replyVo.put("likeCount", likeCount);
+            // If already liked
+            likeStatus =
+                hostHolder.getUser() == null
+                    ? 0
+                    : likeService.findEntityLikeStatus(
+                        hostHolder.getUser().getId(), ENTITY_TYPE_COMMENT, reply.getId());
+            replyVo.put("likeStatus", likeStatus);
 
-                commentVo.put("replies", replyVoList);
-
-                //The number of replies to one comment
-                int replyCount = commentService.findCommentCount(ENTITY_TYPE_COMMENT, comment.getId());
-                commentVo.put("replyCount", replyCount);
-
-                commentVoList.add(commentVo);
-
-            }
-
+            replyVoList.add(replyVo);
+          }
         }
 
-        model.addAttribute("comments", commentVoList);
+        commentVo.put("replies", replyVoList);
 
-        return "/site/discuss-detail";
+        // The number of replies to one comment
+        int replyCount = commentService.findCommentCount(ENTITY_TYPE_COMMENT, comment.getId());
+        commentVo.put("replyCount", replyCount);
 
+        commentVoList.add(commentVo);
+      }
     }
 
+    model.addAttribute("comments", commentVoList);
+
+    return "/site/discuss-detail";
+  }
 }
