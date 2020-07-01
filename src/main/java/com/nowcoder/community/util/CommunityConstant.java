@@ -24,4 +24,9 @@ public interface CommunityConstant {
 
   // The ID of system user
   int SYSTEM_USER_ID = 1;
+
+  // Different authorities
+  String AUTHORITY_USER = "user";
+  String AUTHORITY_ADMIN = "admin";
+  String AUTHORITY_MODERATOR = "moderator";
 }
