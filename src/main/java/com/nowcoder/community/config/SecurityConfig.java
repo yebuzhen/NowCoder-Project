@@ -7,6 +7,7 @@ import java.io.PrintWriter;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
@@ -16,6 +17,7 @@ import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.access.AccessDeniedHandler;
 
 /** @author barea */
+@Configuration
 public class SecurityConfig extends WebSecurityConfigurerAdapter implements CommunityConstant {
 
   @Override
@@ -38,9 +40,12 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter implements Comm
             "/like",
             "/follow",
             "/unfollow")
-        .hasAnyAuthority(AUTHORITY_ADMIN, AUTHORITY_MODERATOR, AUTHORITY_USER)
+        .hasAnyAuthority(AUTHORITY_USER, AUTHORITY_ADMIN, AUTHORITY_MODERATOR)
         .anyRequest()
-        .permitAll();
+        .permitAll()
+        .and()
+        .csrf()
+        .disable();
 
     // No authentication
     http.exceptionHandling()
