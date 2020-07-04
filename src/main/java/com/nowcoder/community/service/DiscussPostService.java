@@ -3,53 +3,56 @@ package com.nowcoder.community.service;
 import com.nowcoder.community.dao.DiscussPostMapper;
 import com.nowcoder.community.entity.DiscussPost;
 import com.nowcoder.community.util.SensitiveFilter;
+import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.HtmlUtils;
 
-import java.util.List;
-
 @Service
 public class DiscussPostService {
 
-    @Autowired
-    private DiscussPostMapper discussPostMapper;
+  @Autowired private DiscussPostMapper discussPostMapper;
 
-    @Autowired
-    private SensitiveFilter sensitiveFilter;
+  @Autowired private SensitiveFilter sensitiveFilter;
 
-    public List<DiscussPost> findDiscussPosts(int userId, int offset, int limit) {
-        return discussPostMapper.selectDiscussPosts(userId, offset, limit);
+  public List<DiscussPost> findDiscussPosts(int userId, int offset, int limit) {
+    return discussPostMapper.selectDiscussPosts(userId, offset, limit);
+  }
+
+  public int findDiscussPostRows(int userId) {
+    return discussPostMapper.selectDiscussPostRows(userId);
+  }
+
+  public int addDiscussPost(DiscussPost post) {
+
+    if (post == null) {
+      throw new IllegalArgumentException("Discuss post argument cannot be empty!");
     }
 
-    public int findDiscussPostRows(int userId) {
-        return discussPostMapper.selectDiscussPostRows(userId);
-    }
+    // Escape HTML
+    post.setTitle(HtmlUtils.htmlEscape(post.getTitle()));
+    post.setContent(HtmlUtils.htmlEscape(post.getContent()));
 
-    public int addDiscussPost(DiscussPost post) {
+    // Censorship
+    post.setTitle(sensitiveFilter.filter(post.getTitle()));
+    post.setContent(sensitiveFilter.filter(post.getContent()));
 
-        if (post == null) {
-            throw new IllegalArgumentException("Discuss post argument cannot be empty!");
-        }
+    return discussPostMapper.insertDiscussPost(post);
+  }
 
-        //Escape HTML
-        post.setTitle(HtmlUtils.htmlEscape(post.getTitle()));
-        post.setContent(HtmlUtils.htmlEscape(post.getContent()));
+  public DiscussPost findDiscussPostById(int id) {
+    return discussPostMapper.selectDiscussPostById(id);
+  }
 
-        //Censorship
-        post.setTitle(sensitiveFilter.filter(post.getTitle()));
-        post.setContent(sensitiveFilter.filter(post.getContent()));
+  public int updateCommentCount(int id, int commentCount) {
+    return discussPostMapper.updateCommentCount(id, commentCount);
+  }
 
-        return discussPostMapper.insertDiscussPost(post);
+  public int updateType(int id, int type) {
+    return discussPostMapper.updateType(id, type);
+  }
 
-    }
-
-    public DiscussPost findDiscussPostById(int id) {
-        return discussPostMapper.selectDiscussPostById(id);
-    }
-
-    public int updateCommentCount(int id, int commentCount) {
-        return discussPostMapper.updateCommentCount(id, commentCount);
-    }
-
+  public int updateStatus(int id, int status) {
+    return discussPostMapper.updateStatus(id, status);
+  }
 }
