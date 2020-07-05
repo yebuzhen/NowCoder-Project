@@ -5,7 +5,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataAccessException;
+import org.springframework.data.redis.connection.RedisConnection;
+import org.springframework.data.redis.connection.RedisStringCommands.BitOperation;
 import org.springframework.data.redis.core.BoundValueOperations;
+import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.SessionCallback;
@@ -138,5 +141,122 @@ public class RedisTests {
             });
 
     System.out.println(object);
+  }
+
+  // Calculate the number of unique data pieces in 200,000 pieces
+  @Test
+  public void testHyperLogLog() {
+
+    String redisKey = "test:hll:01";
+
+    for (int i = 1; i <= 100000; i++) {
+      redisTemplate.opsForHyperLogLog().add(redisKey, i);
+    }
+
+    for (int i = 1; i <= 100000; i++) {
+
+      int r = (int) (Math.random() * 100000 + 1);
+      redisTemplate.opsForHyperLogLog().add(redisKey, r);
+    }
+
+    long size = redisTemplate.opsForHyperLogLog().size(redisKey);
+    System.out.println(size);
+  }
+
+  // Merge three datasets, and then calculate the number of unique data pieces
+  @Test
+  public void testHyperLogLogUnion() {
+
+    String redisKey = "test:hll:02";
+    for (int i = 1; i <= 10000; i++) {
+      redisTemplate.opsForHyperLogLog().add(redisKey, i);
+    }
+
+    redisKey = "test:hll:03";
+    for (int i = 5001; i <= 15000; i++) {
+      redisTemplate.opsForHyperLogLog().add(redisKey, i);
+    }
+
+    redisKey = "test:hll:04";
+    for (int i = 10001; i <= 20000; i++) {
+      redisTemplate.opsForHyperLogLog().add(redisKey, i);
+    }
+
+    String unionKey = "test:hll:union";
+    redisTemplate.opsForHyperLogLog().union(unionKey, "test:hll:02", "test:hll:03", "test:hll:04");
+
+    long size = redisTemplate.opsForHyperLogLog().size(unionKey);
+    System.out.println(size);
+  }
+
+  // Calculate the sum of boolean values from one array of data
+  @Test
+  public void testBitMap() {
+
+    String redisKey = "test:bm:01";
+
+    // Set
+    redisTemplate.opsForValue().setBit(redisKey, 1, true);
+    redisTemplate.opsForValue().setBit(redisKey, 4, true);
+    redisTemplate.opsForValue().setBit(redisKey, 7, true);
+
+    // Get
+    System.out.println(redisTemplate.opsForValue().getBit(redisKey, 0));
+    System.out.println(redisTemplate.opsForValue().getBit(redisKey, 1));
+    System.out.println(redisTemplate.opsForValue().getBit(redisKey, 2));
+
+    // Get statistics
+    Object object =
+        redisTemplate.execute(
+            new RedisCallback() {
+              @Override
+              public Object doInRedis(RedisConnection redisConnection) throws DataAccessException {
+                return redisConnection.bitCount(redisKey.getBytes());
+              }
+            });
+
+    System.out.println(object);
+  }
+
+  // Conduct OR operation on three set of boolean values
+  @Test
+  public void testBitMapOperation() {
+
+    String redisKey = "test:nm:02";
+    redisTemplate.opsForValue().setBit(redisKey, 0, true);
+    redisTemplate.opsForValue().setBit(redisKey, 1, true);
+    redisTemplate.opsForValue().setBit(redisKey, 2, true);
+
+    redisKey = "test:nm:03";
+    redisTemplate.opsForValue().setBit(redisKey, 2, true);
+    redisTemplate.opsForValue().setBit(redisKey, 3, true);
+    redisTemplate.opsForValue().setBit(redisKey, 4, true);
+
+    redisKey = "test:nm:04";
+    redisTemplate.opsForValue().setBit(redisKey, 4, true);
+    redisTemplate.opsForValue().setBit(redisKey, 5, true);
+    redisTemplate.opsForValue().setBit(redisKey, 6, true);
+
+    String orKey = "test:bm:or";
+    Object object =
+        redisTemplate.execute(
+            new RedisCallback() {
+              @Override
+              public Object doInRedis(RedisConnection redisConnection) throws DataAccessException {
+                redisConnection.bitOp(
+                    BitOperation.OR,
+                    orKey.getBytes(),
+                    "test:nm:02".getBytes(),
+                    "test:nm:03".getBytes(),
+                    "test:nm:04".getBytes());
+                return redisConnection.bitCount(orKey.getBytes());
+              }
+            });
+
+    System.out.println(object);
+
+    for (int i = 0; i < 7; i++) {
+      System.out.println(redisTemplate.opsForValue().getBit(orKey, i));
+    }
   }
 }
