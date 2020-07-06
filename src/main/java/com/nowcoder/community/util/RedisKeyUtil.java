@@ -10,7 +10,9 @@ public class RedisKeyUtil {
       PREFIX_FOLLOWEE = "followee",
       PREFIX_KAPTCHA = "kaptcha",
       PREFIX_TICKET = "ticket",
-      PREFIX_USER = "user";
+      PREFIX_USER = "user",
+      PREFIX_UV = "uv",
+      PREFIX_DAU = "dau";
 
   // Likes for one entity
   // like:entity:entityType:entityId -> set(userId)
@@ -49,5 +51,25 @@ public class RedisKeyUtil {
   // User
   public static String getUserKey(int userId) {
     return PREFIX_USER + SPLIT + userId;
+  }
+
+  // Single day UV
+  public static String getUVKey(String date) {
+    return PREFIX_UV + SPLIT + date;
+  }
+
+  // Time period UV
+  public static String getUVKey(String startDate, String endDate) {
+    return PREFIX_UV + SPLIT + startDate + SPLIT + endDate;
+  }
+
+  // Single day active users
+  public static String getDAUKey(String date) {
+    return PREFIX_DAU + SPLIT + date;
+  }
+
+  // Time period active users
+  public static String getDAUKey(String startDate, String endDate) {
+    return PREFIX_DAU + SPLIT + startDate + SPLIT + endDate;
   }
 }
