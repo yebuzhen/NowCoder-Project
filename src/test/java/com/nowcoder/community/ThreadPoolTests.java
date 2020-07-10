@@ -61,7 +61,7 @@ public class ThreadPoolTests {
   @Test
   public void testScheduleExecutorService() {
 
-    Runnable task = () -> logger.debug("Hello ExecutorService");
+    Runnable task = () -> logger.debug("Hello ScheduleExecutorService");
 
     scheduledExecutorService.scheduleAtFixedRate(task, 10000, 1000, TimeUnit.MILLISECONDS);
 
@@ -103,4 +103,11 @@ public class ThreadPoolTests {
 
     sleep(10000);
   }
+
+  // 6.Spring Thread pool that can execute scheduled tasks (simple way)
+  @Test
+  public void testThreadPoolTaskSchedulerSimple() {
+    sleep(30000);
+  }
+
 }
