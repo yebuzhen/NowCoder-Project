@@ -12,7 +12,8 @@ public class RedisKeyUtil {
       PREFIX_TICKET = "ticket",
       PREFIX_USER = "user",
       PREFIX_UV = "uv",
-      PREFIX_DAU = "dau";
+      PREFIX_DAU = "dau",
+      PREFIX_POST = "post";
 
   // Likes for one entity
   // like:entity:entityType:entityId -> set(userId)
@@ -71,5 +72,10 @@ public class RedisKeyUtil {
   // Time period active users
   public static String getDAUKey(String startDate, String endDate) {
     return PREFIX_DAU + SPLIT + startDate + SPLIT + endDate;
+  }
+
+  // Get the key, where its value is the set of posts that need to re-calculate their scores.
+  public static String getPostScoreKey() {
+    return PREFIX_POST + SPLIT + "score";
   }
 }
