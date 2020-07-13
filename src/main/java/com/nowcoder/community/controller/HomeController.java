@@ -15,6 +15,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
 public class HomeController implements CommunityConstant {
@@ -26,16 +27,16 @@ public class HomeController implements CommunityConstant {
   @Autowired private LikeService likeService;
 
   @RequestMapping(path = "/index", method = RequestMethod.GET)
-  public String getIndexPage(Model model, Page page) {
+  public String getIndexPage(Model model, Page page, @RequestParam(name = "orderMode", defaultValue = "0") int orderMode) {
 
     // Before the method is called, SpringMVC will initialise Model and Page, and put Page into
     // Model.
     // Therefore, thymeleaf can directly use the data in the Page object.
     page.setRowsTotal(discussPostService.findDiscussPostRows(0));
-    page.setPath("/index");
+    page.setPath("/index?orderMode=" + orderMode);
 
     List<DiscussPost> discussPostList =
-        discussPostService.findDiscussPosts(0, page.getOffset(), page.getLimitInOnePage());
+        discussPostService.findDiscussPosts(0, page.getOffset(), page.getLimitInOnePage(), orderMode);
     List<Map<String, Object>> discussPosts = new ArrayList<>();
 
     if (discussPostList != null) {
@@ -51,6 +52,7 @@ public class HomeController implements CommunityConstant {
     }
 
     model.addAttribute("discussPosts", discussPosts);
+    model.addAttribute("orderMode", orderMode);
     return "/index";
   }
 

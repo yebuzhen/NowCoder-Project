@@ -8,7 +8,7 @@ import org.apache.ibatis.annotations.Param;
 @Mapper
 public interface DiscussPostMapper {
 
-  List<DiscussPost> selectDiscussPosts(int userId, int offset, int limit);
+  List<DiscussPost> selectDiscussPosts(int userId, int offset, int limit, int orderMode);
 
   // @Param is used to give an alias to the parameter
   // If there is only one parameter, and which would be used in <if>, then the alias is mandatory
@@ -23,4 +23,6 @@ public interface DiscussPostMapper {
   int updateType(int id, int type);
 
   int updateStatus(int id, int status);
+
+  int updateScore(int id, double score);
 }

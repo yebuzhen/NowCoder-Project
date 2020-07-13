@@ -1,7 +1,9 @@
 package com.nowcoder.community.quartz;
 
+import com.nowcoder.community.entity.DiscussPost;
 import com.nowcoder.community.service.DiscussPostService;
 import com.nowcoder.community.service.ElasticsearchService;
+import com.nowcoder.community.service.LikeService;
 import com.nowcoder.community.util.CommunityConstant;
 import com.nowcoder.community.util.RedisKeyUtil;
 import java.text.ParseException;
@@ -31,6 +33,9 @@ public class PostScoreRefreshJob implements Job, CommunityConstant {
 
   @Autowired
   private ElasticsearchService elasticsearchService;
+
+  @Autowired
+  private LikeService likeService;
 
   // Nowcoder epoch
   private static final Date epoch;
@@ -67,6 +72,39 @@ public class PostScoreRefreshJob implements Job, CommunityConstant {
   }
 
   private void refresh(int postId) {
+
+    DiscussPost post = discussPostService.findDiscussPostById(postId);
+
+    if (post == null) {
+
+      logger.error("Cannot find the post when try to refresh the score: id = " + postId);
+      return;
+
+    }
+
+    if (post.getStatus() == 2) {
+
+      logger.error("The queried post is already deleted when try to refresh the score: id = " + postId);
+      return;
+
+    }
+
+    // If it is wonderful
+    boolean isWonderful = post.getStatus() == 1;
+    // The number of comments
+    int commentCount = post.getCommentCount();
+    // The number of likes
+    long likeCount = likeService.findEntityLikeCount(ENTITY_TYPE_POST, postId);
+
+    // Calculate the weight
+    double weight = (isWonderful ? 75 : 0) + commentCount * 10 + likeCount * 2;
+    // Score = log of weight + date distance
+    double score = Math.log10(Math.max(weight, 1)) + (post.getCreateTime().getTime() - epoch.getTime()) / (1000 * 3600 * 24);
+    // Update the score of the post
+    discussPostService.updateScore(postId, score);
+    // Sync with elasticsearch
+    post.setScore(score);
+    elasticsearchService.saveDiscussPost(post);
 
   }
 
