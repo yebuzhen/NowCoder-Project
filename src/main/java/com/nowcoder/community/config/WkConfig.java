@@ -7,9 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
-/**
- * @author barea
- */
+/** @author barea */
 @Configuration
 public class WkConfig {
 
@@ -28,7 +26,5 @@ public class WkConfig {
       file.mkdir();
       logger.info("Created WK image directory: " + wkImageStorage);
     }
-
   }
-
 }

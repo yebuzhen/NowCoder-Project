@@ -8,6 +8,7 @@ import com.nowcoder.community.service.DiscussPostService;
 import com.nowcoder.community.service.ElasticsearchService;
 import com.nowcoder.community.service.MessageService;
 import com.nowcoder.community.util.CommunityConstant;
+import java.io.IOException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -15,6 +16,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
@@ -29,6 +31,12 @@ public class EventConsumer implements CommunityConstant {
   @Autowired private DiscussPostService discussPostService;
 
   @Autowired private ElasticsearchService elasticsearchService;
+
+  @Value("${wk.image.command}")
+  private String wkImageCommand;
+
+  @Value("${wk.image.storage}")
+  private String wkImageStorage;
 
   @KafkaListener(topics = {TOPIC_COMMENT, TOPIC_FOLLOW, TOPIC_LIKE})
   public void handleMessage(ConsumerRecord record) {
@@ -110,4 +118,44 @@ public class EventConsumer implements CommunityConstant {
     elasticsearchService.deleteDiscussPost(event.getEntityId());
   }
 
+  // Consume share topic event
+  @KafkaListener(topics = TOPIC_SHARE)
+  public void handleShareMessage(ConsumerRecord record) {
+
+    if (record == null || record.value() == null) {
+
+      logger.error("The message content is empty!");
+      return;
+    }
+
+    Event event = JSONObject.parseObject(record.value().toString(), Event.class);
+    if (event == null) {
+
+      logger.error("The format of message content is illegal!");
+      return;
+    }
+
+    String htmlUrl = (String) event.getData().get("htmlUrl");
+    String fileName = (String) event.getData().get("fileName");
+    String suffix = (String) event.getData().get("suffix");
+
+    String cmd =
+        wkImageCommand
+            + " --quality 75 "
+            + htmlUrl
+            + " "
+            + wkImageStorage
+            + "/"
+            + fileName
+            + suffix;
+
+    try {
+
+      Runtime.getRuntime().exec(cmd);
+      logger.info("Successfully generated long image");
+
+    } catch (IOException e) {
+      logger.info("Failed to generate long image");
+    }
+  }
 }
