@@ -13,6 +13,8 @@ import com.nowcoder.community.service.UserService;
 import com.nowcoder.community.util.CommunityConstant;
 import com.nowcoder.community.util.CommunityUtil;
 import com.nowcoder.community.util.HostHolder;
+import com.qiniu.util.Auth;
+import com.qiniu.util.StringMap;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -32,6 +34,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 
 /** @author barea */
@@ -62,12 +65,54 @@ public class UserController implements CommunityConstant {
 
   @Autowired private CommentService commentService;
 
+  @Value("${qiniu.key.access}")
+  private String accessKey;
+
+  @Value("${qiniu.key.secret}")
+  private String secretKey;
+
+  @Value("${qiniu.bucket.header.name}")
+  private String headerBucketName;
+
+  @Value("${qiniu.bucket.header.url}")
+  private String headerBucketUrl;
+
   @LoginRequired
   @RequestMapping(path = "/setting", method = RequestMethod.GET)
-  public String getSettingPage() {
+  public String getSettingPage(Model model) {
+
+    // Filename
+    String fileName = CommunityUtil.generateUUID();
+    // Set response message
+    StringMap policy = new StringMap();
+    policy.put("returnBody", CommunityUtil.getJSONString(0));
+    // Generate upload authentication
+    Auth auth = Auth.create(accessKey, secretKey);
+    String uploadToken = auth.uploadToken(headerBucketName, fileName, 3600, policy);
+
+    model.addAttribute("uploadToken", uploadToken);
+    model.addAttribute("fileName", fileName);
+
     return "/site/setting";
   }
 
+  // Update avatar URL
+  @RequestMapping(path = "/header/url", method = RequestMethod.POST)
+  @ResponseBody
+  public String updateHeaderUrl(String fileName) {
+
+    if (StringUtils.isBlank(fileName)) {
+      return CommunityUtil.getJSONString(1, "The filename cannot be empty!");
+    }
+
+    String url = headerBucketUrl + "/" + fileName;
+    userService.updateHeader(hostHolder.getUser().getId(), url);
+
+    return CommunityUtil.getJSONString(0);
+
+  }
+
+  // Deprecated
   @LoginRequired
   @RequestMapping(path = "/upload", method = RequestMethod.POST)
   public String uploadHeader(MultipartFile imageFile, Model model) {
@@ -110,6 +155,7 @@ public class UserController implements CommunityConstant {
     return "redirect:/index";
   }
 
+  // Deprecated
   @RequestMapping(path = "/header/{fileName}", method = RequestMethod.GET)
   public void getHeader(@PathVariable("fileName") String fileName, HttpServletResponse response) {
 
