@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map;
-import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -23,16 +22,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-/**
- * @author barea
- */
+/** @author barea */
 @Controller
 public class ShareController implements CommunityConstant {
 
   private static final Logger logger = LoggerFactory.getLogger(ShareController.class);
 
-  @Autowired
-  private EventProducer eventProducer;
+  @Autowired private EventProducer eventProducer;
 
   @Value("${community.path.domain}")
   private String domain;
@@ -43,6 +39,9 @@ public class ShareController implements CommunityConstant {
   @Value("${wk.image.storage}")
   private String wkImageStorage;
 
+  @Value("${qiniu.bucket.share.url}")
+  private String shareBucketUrl;
+
   @RequestMapping(path = "/share", method = RequestMethod.GET)
   @ResponseBody
   public String share(String htmlUrl) {
@@ -51,23 +50,27 @@ public class ShareController implements CommunityConstant {
     String fileName = CommunityUtil.generateUUID();
 
     // Generate long image asynchronously
-    Event event = new Event().setTopic(TOPIC_SHARE)
-        .setData("htmlUrl", htmlUrl)
-        .setData("fileName", fileName)
-        .setData("suffix", ".png");
+    Event event =
+        new Event()
+            .setTopic(TOPIC_SHARE)
+            .setData("htmlUrl", htmlUrl)
+            .setData("fileName", fileName)
+            .setData("suffix", ".png");
     eventProducer.fireEvent(event);
 
     // Return visit address
     Map<String, Object> map = new HashMap<>();
-    map.put("shareUrl", domain + contextPath + "/share/image/" + fileName);
+    //    map.put("shareUrl", domain + contextPath + "/share/image/" + fileName);
+    map.put("shareUrl", shareBucketUrl + "/" + fileName);
 
     return CommunityUtil.getJSONString(0, null, map);
-
   }
 
+  // Deprecated
   // Get the long image
   @RequestMapping(path = "/share/image/{fileName}", method = RequestMethod.GET)
-  public void getShareImage(@PathVariable("fileName") String fileName, HttpServletResponse response) {
+  public void getShareImage(
+      @PathVariable("fileName") String fileName, HttpServletResponse response) {
 
     if (StringUtils.isBlank(fileName)) {
       throw new IllegalArgumentException("Filename is empty!");
@@ -76,7 +79,7 @@ public class ShareController implements CommunityConstant {
     response.setContentType("image/png");
     File file = new File(wkImageStorage + "/" + fileName + ".png");
 
-    try{
+    try {
 
       OutputStream outputStream = response.getOutputStream();
       FileInputStream fileInputStream = new FileInputStream(file);
@@ -89,17 +92,5 @@ public class ShareController implements CommunityConstant {
     } catch (IOException e) {
       logger.error("Failed to load the long image: " + e.getMessage());
     }
-
   }
-
 }
-
-
-
-
-
-
-
-
-
-
