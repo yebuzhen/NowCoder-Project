@@ -4,16 +4,27 @@ import com.nowcoder.community.dao.DiscussPostMapper;
 import com.nowcoder.community.entity.DiscussPost;
 import com.nowcoder.community.util.SensitiveFilter;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.HtmlUtils;
 
 @Service
 public class DiscussPostService {
 
+  private static final Logger logger = LoggerFactory.getLogger(DiscussPostService.class);
+
   @Autowired private DiscussPostMapper discussPostMapper;
 
   @Autowired private SensitiveFilter sensitiveFilter;
+
+  @Value("${caffeine.posts.max-size}")
+  private int maxSize;
+
+  @Value("${caffeine.posts.expire-seconds}")
+  private int expireSeconds;
 
   public List<DiscussPost> findDiscussPosts(int userId, int offset, int limit, int orderMode) {
     return discussPostMapper.selectDiscussPosts(userId, offset, limit, orderMode);
