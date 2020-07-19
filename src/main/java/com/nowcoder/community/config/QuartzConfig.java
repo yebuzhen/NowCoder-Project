@@ -2,6 +2,7 @@ package com.nowcoder.community.config;
 
 import com.nowcoder.community.quartz.AlphaJob;
 import com.nowcoder.community.quartz.PostScoreRefreshJob;
+import com.nowcoder.community.quartz.WKImageDeleteJob;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.springframework.context.annotation.Bean;
@@ -49,7 +50,7 @@ public class QuartzConfig {
     return factoryBean;
   }
 
-  // Refresh job
+  // Refresh the score job
   @Bean
   public JobDetailFactoryBean postScoreRefreshJobDetail() {
 
@@ -62,6 +63,7 @@ public class QuartzConfig {
     return factoryBean;
   }
 
+  // The trigger to refresh the score
   @Bean
   public SimpleTriggerFactoryBean postScoreRefreshTrigger(JobDetail postScoreRefreshJobDetail) {
 
@@ -74,14 +76,27 @@ public class QuartzConfig {
     return factoryBean;
   }
 
+  // 删除WK图片任务
+  @Bean
+  public JobDetailFactoryBean wkImageDeleteJobDetail() {
+    JobDetailFactoryBean factoryBean = new JobDetailFactoryBean();
+    factoryBean.setJobClass(WKImageDeleteJob.class);
+    factoryBean.setName("wkImageDeleteJob");
+    factoryBean.setGroup("communityJobGroup");
+    factoryBean.setDurability(true);
+    factoryBean.setRequestsRecovery(true);
+    return factoryBean;
+  }
+
+  // 删除WK图片触发器
+  @Bean
+  public SimpleTriggerFactoryBean wkImageDeleteTrigger(JobDetail wkImageDeleteJobDetail) {
+    SimpleTriggerFactoryBean factoryBean = new SimpleTriggerFactoryBean();
+    factoryBean.setJobDetail(wkImageDeleteJobDetail);
+    factoryBean.setName("wkImageDeleteTrigger");
+    factoryBean.setGroup("communityTriggerGroup");
+    factoryBean.setRepeatInterval(1000 * 60 * 4);
+    factoryBean.setJobDataMap(new JobDataMap());
+    return factoryBean;
+  }
 }
-
-
-
-
-
-
-
-
-
-

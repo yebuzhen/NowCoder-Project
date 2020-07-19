@@ -18,37 +18,25 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.BoundSetOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 
-/**
- * @author barea
- */
+/** @author barea */
 public class PostScoreRefreshJob implements Job, CommunityConstant {
 
   private static final Logger logger = LoggerFactory.getLogger(PostScoreRefreshJob.class);
-
-  @Autowired
-  private RedisTemplate redisTemplate;
-
-  @Autowired
-  private DiscussPostService discussPostService;
-
-  @Autowired
-  private ElasticsearchService elasticsearchService;
-
-  @Autowired
-  private LikeService likeService;
-
   // Nowcoder epoch
   private static final Date epoch;
 
   static {
-
     try {
       epoch = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse("2014-08-01 00:00:00");
     } catch (ParseException e) {
       throw new RuntimeException("Failed to Initialise of Nowcoder epoch");
     }
-
   }
+
+  @Autowired private RedisTemplate redisTemplate;
+  @Autowired private DiscussPostService discussPostService;
+  @Autowired private ElasticsearchService elasticsearchService;
+  @Autowired private LikeService likeService;
 
   @Override
   public void execute(JobExecutionContext context) throws JobExecutionException {
@@ -60,7 +48,6 @@ public class PostScoreRefreshJob implements Job, CommunityConstant {
 
       logger.info("[Task Canceled] There is not post score need to re-calculate");
       return;
-
     }
 
     logger.info("[Task Start] Now start to refresh scores of posts");
@@ -68,7 +55,6 @@ public class PostScoreRefreshJob implements Job, CommunityConstant {
       refresh((Integer) operations.pop());
     }
     logger.info("[Task Finish] Scores of posts have re-calculated");
-
   }
 
   private void refresh(int postId) {
@@ -79,14 +65,13 @@ public class PostScoreRefreshJob implements Job, CommunityConstant {
 
       logger.error("Cannot find the post when try to refresh the score: id = " + postId);
       return;
-
     }
 
     if (post.getStatus() == 2) {
 
-      logger.error("The queried post is already deleted when try to refresh the score: id = " + postId);
+      logger.error(
+          "The queried post is already deleted when try to refresh the score: id = " + postId);
       return;
-
     }
 
     // If it is wonderful
@@ -99,23 +84,13 @@ public class PostScoreRefreshJob implements Job, CommunityConstant {
     // Calculate the weight
     double weight = (isWonderful ? 75 : 0) + commentCount * 10 + likeCount * 2;
     // Score = log of weight + date distance
-    double score = Math.log10(Math.max(weight, 1)) + (post.getCreateTime().getTime() - epoch.getTime()) / (1000 * 3600 * 24);
+    double score =
+        Math.log10(Math.max(weight, 1))
+            + (post.getCreateTime().getTime() - epoch.getTime()) / (1000 * 3600 * 24);
     // Update the score of the post
     discussPostService.updateScore(postId, score);
     // Sync with elasticsearch
     post.setScore(score);
     elasticsearchService.saveDiscussPost(post);
-
   }
-
 }
-
-
-
-
-
-
-
-
-
-
