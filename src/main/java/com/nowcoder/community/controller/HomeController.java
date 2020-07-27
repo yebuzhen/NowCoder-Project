@@ -26,8 +26,14 @@ public class HomeController implements CommunityConstant {
 
   @Autowired private LikeService likeService;
 
+  @RequestMapping(path = "/", method = RequestMethod.GET)
+  public String root() {
+    return "forward:/index";
+  }
+
   @RequestMapping(path = "/index", method = RequestMethod.GET)
-  public String getIndexPage(Model model, Page page, @RequestParam(name = "orderMode", defaultValue = "0") int orderMode) {
+  public String getIndexPage(
+      Model model, Page page, @RequestParam(name = "orderMode", defaultValue = "0") int orderMode) {
 
     // Before the method is called, SpringMVC will initialise Model and Page, and put Page into
     // Model.
@@ -36,7 +42,8 @@ public class HomeController implements CommunityConstant {
     page.setPath("/index?orderMode=" + orderMode);
 
     List<DiscussPost> discussPostList =
-        discussPostService.findDiscussPosts(0, page.getOffset(), page.getLimitInOnePage(), orderMode);
+        discussPostService.findDiscussPosts(
+            0, page.getOffset(), page.getLimitInOnePage(), orderMode);
     List<Map<String, Object>> discussPosts = new ArrayList<>();
 
     if (discussPostList != null) {
